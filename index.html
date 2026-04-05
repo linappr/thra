@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MathWars</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+
+    <!-- MENU -->
+    <div id="screen-menu" class="screen active">
+      <div class="menu-box">
+        <div class="menu-logo">⚔️</div>
+        <h1 class="menu-title">MathWars</h1>
+        <p class="menu-sub">Braň svou postel a procvičuj matematiku!</p>
+        <div class="menu-btns">
+          <button id="btn-start" class="btn btn-green">🎮 Hrát</button>
+          <button id="btn-howto" class="btn btn-blue">❓ Jak hrát</button>
+        </div>
+        <div class="high-score-box">🏆 Nejlepší skóre: <span id="best-score">0</span></div>
+      </div>
+    </div>
+
+    <!-- HOW TO PLAY -->
+    <div id="screen-howto" class="screen">
+      <div class="howto-box">
+        <h2>📖 Jak hrát</h2>
+        <ul class="howto-list">
+          <li>🕹️ Pohybuj se šipkami nebo klávesami <b>WASD</b></li>
+          <li>🛏️ Chraň svou postel – nepřátelé ji chtějí zničit!</li>
+          <li>🧟 Přiblíž se k nepříteli → objeví se matematická otázka</li>
+          <li>✅ Správná odpověď = nepřítel poražen</li>
+          <li>❌ Špatná odpověď = ztráta srdíčka</li>
+          <li>❤️ Máš 3 srdíčka a 2 záchranné životy postele</li>
+          <li>🏆 Přežij 3 světy a staň se MathWars šampiónem!</li>
+        </ul>
+        <div class="howto-ops">
+          <div class="op-badge">➕ Sčítání</div>
+          <div class="op-badge">➖ Odčítání</div>
+          <div class="op-badge">✖️ Násobení</div>
+          <div class="op-badge">➗ Dělení</div>
+        </div>
+        <button id="btn-back" class="btn btn-blue">← Zpět</button>
+      </div>
+    </div>
+
+    <!-- GAME -->
+    <div id="screen-game" class="screen">
+      <div id="hud">
+        <div id="hud-hearts"></div>
+        <div id="hud-center">
+          <span id="hud-level-name">Louka</span>
+          <span id="hud-wave">Vlna 1 / 5</span>
+        </div>
+        <div id="hud-right">
+          <span id="hud-bed">🛏️ ❤️❤️</span>
+          <span id="hud-score">⭐ 0</span>
+        </div>
+      </div>
+      <canvas id="canvas"></canvas>
+
+      <!-- MATH QUESTION OVERLAY -->
+      <div id="question-overlay" class="hidden">
+        <div id="question-modal">
+          <div id="q-enemy-name">🧟 ZOMBIE ÚTOČÍ!</div>
+          <div id="q-text">7 × 8 = ?</div>
+          <div id="q-timer-wrap"><div id="q-timer-bar"></div></div>
+          <div id="q-options"></div>
+          <div id="q-input-row">
+            <input id="q-input" type="number" placeholder="Nebo napiš odpověď..." min="0" max="999">
+            <button id="q-submit" class="btn btn-green">✓ OK</button>
+          </div>
+          <div id="q-feedback"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="screen-gameover" class="screen">
+      <div class="endgame-box">
+        <div class="end-icon">💀</div>
+        <h2>Konec hry!</h2>
+        <p>Nepřátelé zničili tvou postel…</p>
+        <div class="end-score">Skóre: <span id="go-score">0</span></div>
+        <div class="end-btns">
+          <button id="btn-retry" class="btn btn-green">🔄 Hrát znovu</button>
+          <button id="btn-go-menu" class="btn btn-blue">🏠 Menu</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WIN -->
+    <div id="screen-win" class="screen">
+      <div class="endgame-box win-box">
+        <div class="end-icon">🏆</div>
+        <h2>Vyhráno!</h2>
+        <p>Porazil jsi všechny nepřátele a zachránil postel!</p>
+        <div class="end-score">Skóre: <span id="win-score">0</span></div>
+        <div class="end-btns">
+          <button id="btn-win-retry" class="btn btn-green">🔄 Hrát znovu</button>
+          <button id="btn-win-menu" class="btn btn-blue">🏠 Menu</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="js/game.js"></script>
+</body>
+</html>
