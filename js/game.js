@@ -16,8 +16,17 @@ const SPAWN_START_Y = ISLE_Y;
 const PLAYER_SPEED  = 210;  // px/s
 const CHAR_R = 20;          // character collision radius
 const INTERACT_R = 46;      // question trigger distance
-const BASE_SPEED = 52;      // enemy base speed px/s
+const BASE_SPEED = 28;      // enemy base speed px/s
 const QUESTION_TIME = 18;   // seconds per question
+
+// Block barrier positions (protect the bed)
+const BLOCK_POSITIONS = [
+  { x: BED_X + 105, y: BED_Y - 88 },
+  { x: BED_X + 125, y: BED_Y + 5  },
+  { x: BED_X + 105, y: BED_Y + 88 },
+  { x: BED_X + 10,  y: BED_Y - 130 },
+  { x: BED_X + 10,  y: BED_Y + 130 },
+];
 
 // =====================================================================
 // LEVELS
@@ -162,9 +171,9 @@ class Particle {
 // ENEMY TYPES
 // =====================================================================
 const ENEMY_DEF = {
-  zombie:   { emoji:'🧟', name:'Zombie',   speedMult:1.0, score:10 },
-  skeleton: { emoji:'💀', name:'Skeleton', speedMult:1.35, score:15 },
-  creeper:  { emoji:'😈', name:'Creeper',  speedMult:1.6,  score:25 },
+  zombie:   { emoji:'🧟', name:'Zombie',   speedMult:1.0,  score:10, glow:'#1e6b12' },
+  skeleton: { emoji:'💀', name:'Skeleton', speedMult:1.35, score:15, glow:'#6e6e6e' },
+  creeper:  { emoji:'😈', name:'Creeper',  speedMult:1.6,  score:25, glow:'#126b12' },
 };
 
 // =====================================================================
@@ -182,7 +191,7 @@ class Enemy {
     this.shakeT = 0;
     this.shakeX = 0;
   }
-  update(dt, tx, ty) {
+  update(dt, tx, ty, blocks) {
     if (this.dying) {
       this.dyingT += dt;
       this.alpha = Math.max(0, 1 - this.dyingT / 0.5);
@@ -191,6 +200,28 @@ class Enemy {
     }
     if (this.shakeT > 0) { this.shakeT -= dt; this.shakeX = (Math.random()-0.5)*8; }
     else this.shakeX = 0;
+
+    // Check if a block is blocking the path (within attack range)
+    let targetBlock = null;
+    let minDist = Infinity;
+    for (const b of (blocks || [])) {
+      if (!b.alive) continue;
+      const d = Math.hypot(this.x - b.x, this.y - b.y);
+      if (d < 30 && d < minDist) { minDist = d; targetBlock = b; }
+    }
+    if (targetBlock) {
+      // Attack the block instead of moving
+      this.attackT = (this.attackT || 0) + dt;
+      if (this.attackT >= 1.8) {
+        this.attackT = 0;
+        targetBlock.hp--;
+        if (targetBlock.hp <= 0) targetBlock.alive = false;
+      }
+      this.shakeX = Math.sin(this.attackT * 20) * 3; // attack wobble
+      return;
+    }
+    this.attackT = 0;
+
     const dx = tx - this.x, dy = ty - this.y;
     const d = Math.sqrt(dx*dx + dy*dy);
     if (d > 2) { this.x += dx/d * this.speed * dt; this.y += dy/d * this.speed * dt; }
@@ -199,7 +230,12 @@ class Enemy {
     if (!this.alive && !this.dying) return;
     ctx.save();
     ctx.globalAlpha = this.alpha;
-    ctx.font = '34px serif';
+    // Colored glow circle behind enemy for visibility
+    ctx.fillStyle = this.def.glow;
+    ctx.beginPath();
+    ctx.arc(this.x + this.shakeX, this.y, 23, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '42px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(this.def.emoji, this.x + this.shakeX, this.y);
@@ -249,7 +285,12 @@ class Player {
     // Blink when invincible
     if (this.invTimer > 0 && Math.floor(this.invTimer * 10) % 2 === 0) return;
     ctx.save();
-    ctx.font = '34px serif';
+    // Blue glow circle behind player for visibility
+    ctx.fillStyle = '#1a3a9a';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, 23, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '42px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('🧑', this.x, this.y);
@@ -263,6 +304,53 @@ class Player {
     return true;
   }
   distTo(x, y) { return Math.hypot(this.x - x, this.y - y); }
+}
+
+// =====================================================================
+// BLOCK CLASS
+// =====================================================================
+class Block {
+  constructor(x, y) {
+    this.x = x; this.y = y;
+    this.maxHp = 3;
+    this.hp    = this.maxHp;
+    this.alive = true;
+  }
+  draw(ctx) {
+    if (!this.alive) return;
+    const S = 34;
+    const pct = this.hp / this.maxHp;
+    // Brick color darkens as damaged
+    ctx.save();
+    ctx.fillStyle = pct > 0.66 ? '#c8a84b' : pct > 0.33 ? '#9a7a2e' : '#6a5018';
+    ctx.fillRect(this.x - S/2, this.y - S/2, S, S);
+    // Brick pattern lines
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(this.x - S/2, this.y - S/2, S, S);
+    ctx.beginPath();
+    ctx.moveTo(this.x - S/2, this.y); ctx.lineTo(this.x + S/2, this.y);
+    ctx.moveTo(this.x, this.y - S/2); ctx.lineTo(this.x, this.y);
+    ctx.stroke();
+    // Crack overlay when damaged
+    if (this.hp < this.maxHp) {
+      ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(this.x - 6, this.y - 8); ctx.lineTo(this.x + 4, this.y + 10);
+      ctx.moveTo(this.x + 6, this.y - 6); ctx.lineTo(this.x - 2, this.y + 6);
+      ctx.stroke();
+    }
+    // HP dots above block
+    for (let i = 0; i < this.maxHp; i++) {
+      ctx.fillStyle = i < this.hp ? '#f1c40f' : 'rgba(255,255,255,0.2)';
+      ctx.beginPath();
+      ctx.arc(this.x - (this.maxHp-1)*5 + i*10, this.y - S/2 - 6, 3, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+  reset() { this.hp = this.maxHp; this.alive = true; }
 }
 
 // =====================================================================
@@ -287,6 +375,7 @@ class Game {
     this.player    = null;
     this.enemies   = [];
     this.particles = [];
+    this.blocks    = BLOCK_POSITIONS.map(p => new Block(p.x, p.y));
     this.keys      = {};
 
     this.spawnQueue = [];
@@ -353,6 +442,7 @@ class Game {
     this.bedHearts = 2;
     this.enemies   = [];
     this.particles = [];
+    this.blocks    = BLOCK_POSITIONS.map(p => new Block(p.x, p.y));
     this.player    = new Player(SPAWN_START_X, SPAWN_START_Y);
     this.state     = 'playing';
     this._showScreen('screen-game');
@@ -374,6 +464,8 @@ class Game {
     this.spawnTimer    = 0.6;
     this.qCooldown     = 0;
     this.waveCompleted = false;
+    // Reset blocks at each wave start
+    this.blocks.forEach(b => b.reset());
     this._updateHUD();
   }
 
@@ -580,7 +672,7 @@ class Game {
     this.player.update(dt, this.keys, island);
 
     // Enemies
-    this.enemies.forEach(e => e.update(dt, BED_X, BED_Y));
+    this.enemies.forEach(e => e.update(dt, BED_X, BED_Y, this.blocks));
 
     // Enemy reached bed?
     this.enemies.forEach(e => {
@@ -692,6 +784,9 @@ class Game {
     // Bed
     this._drawBed(ctx);
 
+    // Blocks (barriers)
+    this.blocks.forEach(b => b.draw(ctx));
+
     // Enemies
     this.enemies.forEach(e => e.draw(ctx));
 
@@ -771,7 +866,12 @@ class Game {
 
   _drawBed(ctx) {
     ctx.save();
-    ctx.font = '40px serif';
+    // Glow behind bed
+    ctx.fillStyle = 'rgba(255, 100, 100, 0.35)';
+    ctx.beginPath();
+    ctx.arc(BED_X, BED_Y, 30, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.font = '48px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText('🛏️', BED_X, BED_Y);
