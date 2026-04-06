@@ -49,7 +49,13 @@
     <!-- GAME -->
     <div id="screen-game" class="screen">
       <div id="hud">
-        <div id="hud-hearts"></div>
+        <div id="hud-left">
+          <div id="hud-hearts"></div>
+          <div id="hud-extras">
+            <span id="hud-shield">🛡️ 1</span>
+            <span id="hud-fast">⚡ 0/3</span>
+          </div>
+        </div>
         <div id="hud-center">
           <span id="hud-level-name">Louka</span>
           <span id="hud-wave">Vlna 1 / 5</span>
@@ -57,6 +63,7 @@
         <div id="hud-right">
           <span id="hud-bed">🛏️ ❤️❤️</span>
           <span id="hud-score">⭐ 0</span>
+          <button id="btn-pause" class="btn-hud">⏸</button>
         </div>
       </div>
       <canvas id="canvas"></canvas>
@@ -69,8 +76,11 @@
           <div id="q-timer-wrap"><div id="q-timer-bar"></div></div>
           <div id="q-options"></div>
           <div id="q-input-row">
-            <input id="q-input" type="number" placeholder="Nebo napiš odpověď..." min="0" max="999">
+            <input id="q-input" type="number" placeholder="Nebo napiš odpověď..." min="0" max="99999">
             <button id="q-submit" class="btn btn-green">✓ OK</button>
+          </div>
+          <div id="q-shield-row">
+            <button id="q-shield" class="btn btn-shield">🛡️ Přeskočit (1×)</button>
           </div>
           <div id="q-feedback"></div>
         </div>
